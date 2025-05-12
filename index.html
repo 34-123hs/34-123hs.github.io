@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <title>PWA 앱</title>
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" href="./manifest.json" />
   <meta name="theme-color" content="#000000" />
   <style>
     body {
@@ -122,7 +122,7 @@
         let dinner = "❌ 석식 없음";
 
         meals.forEach(m => {
-          const dish = m.DDISH_NM.replace(/<br\/>/g, '\n');
+          const dish = m.DDISH_NM.replace(/<br\/?>/g, '\n');
           if (m.MMEAL_SC_CODE === "1") breakfast = `🍳 조식:\n${dish}`;
           if (m.MMEAL_SC_CODE === "2") lunch = `🥗 중식:\n${dish}`;
           if (m.MMEAL_SC_CODE === "3") dinner = `🍛 석식:\n${dish}`;
@@ -161,7 +161,7 @@
       fetchDiet(today);
 
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service-worker.js')
+        navigator.serviceWorker.register('./service-worker.js')
           .then(reg => console.log('SW 등록됨:', reg.scope))
           .catch(err => console.error('SW 등록 실패:', err));
       }
