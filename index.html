@@ -1,3 +1,4 @@
+--- index.html ---
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -5,11 +6,43 @@
   <title>PWA 앱</title>
   <link rel="manifest" href="/manifest.json" />
   <meta name="theme-color" content="#000000" />
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #ece9e6, #ffffff);
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    h1 {
+      font-size: 2.5rem;
+      color: #333;
+      margin-bottom: 2rem;
+    }
+    button {
+      padding: 1rem 2rem;
+      margin: 1rem;
+      border: none;
+      background-color: #0078D7;
+      color: white;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #005ea6;
+    }
+  </style>
 </head>
 <body>
-  <h1>내 PWA 앱</h1>
-  <button onclick="openYouTube()">YouTube 보기</button>
-  <button onclick="openSpecificVideo()">특정 영상 보기</button>
+  <h1>🎉 내 PWA 앱에 오신 걸 환영합니다!</h1>
+  <button onclick="openYouTube()">📺 YouTube 보기</button>
+  <button onclick="openSpecificVideo()">🎬 특정 영상 보기</button>
 
   <script>
     function openYouTube() {
@@ -17,7 +50,7 @@
     }
 
     function openSpecificVideo() {
-      const videoId = "dQw4w9WgXcQ"; // 예시: Rick Astley - Never Gonna Give You Up
+      const videoId = "dQw4w9WgXcQ";
       window.open(`https://www.youtube.com/watch?v=${videoId}`, "_blank");
     }
 
@@ -31,3 +64,61 @@
   </script>
 </body>
 </html>
+
+--- service-worker.js ---
+const CACHE_NAME = "site-cache-v1";
+const urlsToCache = [
+  "/",
+  "/index.html",
+  "/style.css",
+  "/fallback.html"
+];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  event.respondWith(
+    fetch(event.request).catch(() => 
+      caches.match(event.request).then(res => res || caches.match('/fallback.html'))
+    )
+  );
+});
+
+--- fallback.html ---
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>오프라인 상태</title>
+</head>
+<body>
+  <h2>인터넷 연결이 없습니다 😢</h2>
+  <p>다시 연결되면 자동으로 콘텐츠를 불러옵니다.</p>
+</body>
+</html>
+
+--- manifest.json ---
+{
+  "name": "34-123hs App",
+  "short_name": "123hs",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
