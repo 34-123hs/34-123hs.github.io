@@ -46,4 +46,31 @@
       });
     }
   </script>
-  
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>PWA 앱</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#000000" />
+</head>
+<body>
+  <h1>내 PWA 앱</h1>
+  <button onclick="openYouTube()">YouTube 보기</button>
+
+  <script>
+    function openYouTube() {
+      window.open("https://www.youtube.com", "_blank");
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(reg => console.log('SW 등록됨:', reg.scope))
+          .catch(err => console.error('SW 등록 실패:', err));
+      });
+    }
+  </script>
+</body>
+</html>
