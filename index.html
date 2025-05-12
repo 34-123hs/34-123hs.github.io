@@ -9,10 +9,16 @@
 <body>
   <h1>내 PWA 앱</h1>
   <button onclick="openYouTube()">YouTube 보기</button>
+  <button onclick="openSpecificVideo()">특정 영상 보기</button>
 
   <script>
     function openYouTube() {
       window.open("https://www.youtube.com", "_blank");
+    }
+
+    function openSpecificVideo() {
+      const videoId = "dQw4w9WgXcQ"; // 예시: Rick Astley - Never Gonna Give You Up
+      window.open(`https://www.youtube.com/watch?v=${videoId}`, "_blank");
     }
 
     if ('serviceWorker' in navigator) {
