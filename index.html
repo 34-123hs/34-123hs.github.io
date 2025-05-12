@@ -1,3 +1,4 @@
+--- index.html ---
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -14,36 +15,63 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       height: 100vh;
     }
     h1 {
       font-size: 2.5rem;
       color: #333;
-      margin-bottom: 2rem;
+      margin-bottom: 1rem;
+    }
+    .button-group {
+      display: inline-flex;
+      align-items: center;
+      margin-bottom: 1.5rem;
     }
     button {
       padding: 1rem 2rem;
-      margin: 1rem;
+      margin: 0.5rem;
       border: none;
-      background-color: #0078D7;
-      color: white;
       font-size: 1rem;
       border-radius: 8px;
+      background-color: #0078D7;
+      color: white;
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
     button:hover {
       background-color: #005ea6;
     }
+    #meal-date {
+      padding: 1rem;
+      margin: 0.5rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #fff;
+      width: 150px;
+    }
+    pre {
+      white-space: pre-wrap;
+      text-align: left;
+      background: #f7f7f7;
+      padding: 1rem;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
   <h1>🎉 내 PWA 앱에 오신 걸 환영합니다!</h1>
+  <div class="button-group">
+    <button id="load-meal-btn">🍱 급식 불러오기</button>
+    <button id="calendar-btn">📅</button>
+    <input id="meal-date" type="text" readonly placeholder="날짜 선택">
+  </div>
   <button onclick="openYouTube()">📺 YouTube 보기</button>
   <button onclick="openSpecificVideo()">🎬 특정 영상 보기</button>
-  <button onclick="fetchLunchMenu()">🍱 급식 불러오기</button>
-  <div id="meal"></div>
+  <pre id="meal"></pre>
 
   <script>
     function openYouTube() {
@@ -55,39 +83,89 @@
       window.open(`https://www.youtube.com/watch?v=${videoId}`, "_blank");
     }
 
-    async function fetchLunchMenu() {
-      const today = new Date();
-      const yyyy = today.getFullYear();
-      const mm = String(today.getMonth() + 1).padStart(2, '0');
-      const dd = String(today.getDate()).padStart(2, '0');
-      const date = `${yyyy}${mm}${dd}`;
+    function getFormattedDate(d) {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}${mm}${dd}`;
+    }
 
-//       const apiKey = "de4160b6487c4d94bbcb67a5c5790513"; // 여기에 본인의 NEIS OpenAPI 키를 입력하세요
-//       const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=de4160b6487c4d94bbcb67a5c5790513&Type=json&ATPT_OFCDC_SC_CODE=7010000&SD_SCHUL_CODE=1170058&MLSV_YMD=20250512
-// `;
-      const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?ATPT_OFCDC_SC_CODE=T10&SD_SCHUL_CODE=9290083`;
-////////////////////////////////////////////////////////////////////////////
-//여기 링크 고치기
-/////////////////////////////////////////////////////
+    function isWeekend(date) {
+      const day = date.getDay();
+      return day === 0 || day === 6;
+    }
+
+    async function fetchDiet(inputDate) {
+      const targetDate = inputDate ? new Date(inputDate) : new Date();
+      const date = getFormattedDate(targetDate);
+
+      if (isWeekend(targetDate)) {
+        document.getElementById("meal").innerText = "📅 주말에는 급식이 제공되지 않습니다.";
+        return;
+      }
+
+      const apiKey = "de4160b6487c4d94bbcb67a5c5790513";
+      const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${apiKey}&Type=json&ATPT_OFCDC_SC_CODE=B10&SD_SCHUL_CODE=7010115&MLSV_YMD=${date}`;
 
       try {
         const response = await fetch(url);
         const data = await response.json();
-        const meal = data.mealServiceDietInfo[1].row[0].DDISH_NM.replace(/<br\/>/g, '\n');
-        document.getElementById("meal").innerText = `🍴 오늘의 급식:\n${meal}`;
+
+        if (!data.mealServiceDietInfo || data.mealServiceDietInfo.length < 2) {
+          document.getElementById("meal").innerText = "⚠️ 급식 정보 없음.";
+          return;
+        }
+
+        const meals = data.mealServiceDietInfo[1].row;
+        let breakfast = "❌ 조식 없음";
+        let lunch = "❌ 중식 없음";
+        let dinner = "❌ 석식 없음";
+
+        meals.forEach(m => {
+          const dish = m.DDISH_NM.replace(/<br\/>/g, '\n');
+          if (m.MMEAL_SC_CODE === "1") breakfast = `🍳 조식:\n${dish}`;
+          if (m.MMEAL_SC_CODE === "2") lunch = `🥗 중식:\n${dish}`;
+          if (m.MMEAL_SC_CODE === "3") dinner = `🍛 석식:\n${dish}`;
+        });
+
+        document.getElementById("meal").innerText = `${breakfast}\n\n${lunch}\n\n${dinner}`;
       } catch (err) {
         document.getElementById("meal").innerText = "⚠️ 급식 정보를 불러올 수 없습니다.";
         console.error(err);
       }
     }
 
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
+    const dateInput = document.getElementById('meal-date');
+    const calendarBtn = document.getElementById('calendar-btn');
+    const loadMealBtn = document.getElementById('load-meal-btn');
+
+    const hiddenPicker = document.createElement('input');
+    hiddenPicker.type = 'date';
+    hiddenPicker.style.display = 'none';
+    document.body.appendChild(hiddenPicker);
+
+    calendarBtn.addEventListener('click', () => hiddenPicker.showPicker());
+    hiddenPicker.addEventListener('change', () => {
+      const selected = hiddenPicker.value;
+      dateInput.value = selected;
+      fetchDiet(selected);
+    });
+
+    loadMealBtn.addEventListener('click', () => {
+      fetchDiet(dateInput.value || new Date());
+    });
+
+    window.addEventListener('load', () => {
+      const today = new Date().toISOString().split('T')[0];
+      dateInput.value = today;
+      fetchDiet(today);
+
+      if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/service-worker.js')
           .then(reg => console.log('SW 등록됨:', reg.scope))
           .catch(err => console.error('SW 등록 실패:', err));
-      });
-    }
+      }
+    });
   </script>
 </body>
 </html>
